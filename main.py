@@ -1,25 +1,32 @@
 #!/usr/bin/env python3
-"""Entry for make.fun "Sum up 22 November's world news in one image".
+"""Entry point for the make.fun news-image build.
 
-Writes the day's news infographic (entry.png, 1024x1024) to
-/output/entry.png. Deterministic: copies the bundled image byte for byte,
-no network, no randomness.
+Copies the rendered front page (entry.png, next to this file) to
+/output/entry.png and checks the copy is byte-identical.
 """
 
+import hashlib
+import os
 import shutil
-import sys
-from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+HERE = os.path.dirname(os.path.abspath(__file__))
+SRC = os.path.join(HERE, "entry.png")
+DEST_DIR = "/output"
+DEST = os.path.join(DEST_DIR, "entry.png")
 
 
-def main() -> int:
-    src = HERE / "entry.png"
-    out = Path("/output/entry.png")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(src, out)
-    return 0
+def digest(path):
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def main():
+    os.makedirs(DEST_DIR, exist_ok=True)
+    shutil.copyfile(SRC, DEST)
+    if digest(SRC) != digest(DEST):
+        raise SystemExit("copy mismatch: /output/entry.png differs from entry.png")
+    print(f"copied {SRC} -> {DEST} ({os.path.getsize(DEST)} bytes, identical)")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
